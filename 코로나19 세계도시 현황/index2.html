@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset = "utf-8"/>
+  <link rel = "stylesheet" href = "style.css">
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDmazB5GBOKGFNuAWwrp-sGQ4TSK7g5AnQ&region=kr"></script>
+  <script type = "text/javascript">
+
+      google.charts.load('current', {
+        'packages':['geochart'],
+      });
+
+      google.charts.setOnLoadCallback(drawRegionsMap); //여기서 drawRegionsMap이라는 함수를 부름
+
+
+      const getXMLfromAPI = async (reqURL) => {
+
+        const response = await fetch(reqURL);
+        const responseToText = await response.text();
+        const responseDom = new DOMParser().parseFromString(responseToText, "application/xml");
+        return responseDom;
+      };
+
+
+      function domToObjectList(doc){
+        const items = doc.querySelectorAll('item'); //item 배열
+
+        console.log(items.length); //3177
+
+
+        const itemObjects = [...items].map(item => {
+          return ({
+            nationNm: item.querySelector('nationNm').textContent, //국가
+            natDefCnt: item.querySelector('natDefCnt').textContent, //누적확진자
+            natDeathRate: item.querySelector('natDeathRate').textContent, //사망률
+            natDeathCnt: item.querySelector('natDeathCnt').textContent, //누적사망자수
+            stdDay: item.querySelector('stdDay').textContent, //기준일자
+          })
+        })
+
+        return itemObjects; //객체 배열
+      }
+
+      /*
+      async function objectListToArr(){
+
+        const url = 'http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19NatInfStateJson';
+        const authKey = 'sddo3Rg2SQGPF8uXBFebAdbqK3YZDXPMcVcfieLdWs6fK4gtMZIb9fL%2FEgXyOJSMPcGP7%2BwsKAH9qO6n5vQPvA%3D%3D';
+      //  const authKey = 'R6W5Dm9WxSDjBSSsJloPdjoev%2FuGEbaC4oQmZqV4Tii4KB8w4m9QxeO%2BfyWcUWws9ntmPIzWVKlW93dNkLNsxQ%3D%3D';
+        let reqURL = url + "?serviceKey=" + authKey + '&pageNo=1&numOfRows=10&startCreateDt=20220901&endCreateDt=20220901';
+
+        const doc = await getXMLfromAPI(reqURL);
+        const objectList = domToObjectList(doc);
+
+        const arr = [];
+
+        for(let i = 0; i< objectList.length; i++){
+          const object = [objectList[i].nationNm, objectList[i].natDefCnt];
+          console.log(Array.isArray(object)); //true
+          arr.push(object);
+          console.log(object);
+        }
+
+        console.log(typeof arr);
+        console.log(Array.isArray(arr));
+        return arr;
+      }*/
+
+      async function drawRegionsMap() {
+
+        const url = 'http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19NatInfStateJson';
+        const authKey = 'sddo3Rg2SQGPF8uXBFebAdbqK3YZDXPMcVcfieLdWs6fK4gtMZIb9fL%2FEgXyOJSMPcGP7%2BwsKAH9qO6n5vQPvA%3D%3D';
+      //  const authKey = 'R6W5Dm9WxSDjBSSsJloPdjoev%2FuGEbaC4oQmZqV4Tii4KB8w4m9QxeO%2BfyWcUWws9ntmPIzWVKlW93dNkLNsxQ%3D%3D';
+        let reqURL = url + "?serviceKey=" + authKey + '&pageNo=1&numOfRows=10&startCreateDt=20220901&endCreateDt=20220901';
+
+        const doc = await getXMLfromAPI(reqURL);
+        const objectList = domToObjectList(doc);
+
+        const arrs = [];
+
+        for(let i = 0; i< objectList.length; i++){
+          console.log(typeof objectList[i].natDefCnt);
+          let col2 = objectList[i].natDefCnt /10000;
+          col2 = Number(col2);
+          console.log(typeof col2);
+          const object = [objectList[i].nationNm, col2.toString()];
+          console.log(Array.isArray(object)); //true
+          arrs.push(object);
+          console.log(object);
+        }
+
+        console.log(Array.isArray(arrs)); //배열 true
+        console.log(typeof arrs);
+
+        var data = google.visualization.arrayToDataTable(arrs);
+        var options = {
+          colorAxis: {
+            values : [1, 100, 120, 150,200,300,400,500,600,700,1000,1500],
+            colors : ['TEA', 'MINT', 'JUNGLE', 'JADE', 'FERN', 'PINE', 'HUNTER', 'OLIVE', 'ARMY', 'COFFEE', 'HICKORY', 'SHADOW'],S
+          }
+        };
+        var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
+
+        chart.draw(data, options);
+
+      }
+  </script>
+</head>
+<body>
+  <!--
+  <table>
+    <tr>
+      <th>국가</th>
+      <th>누적확진자</th>
+      <th>사망률</th>
+      <th>누적사망자수</th>
+      <th>기준일자</th>
+    </tr>
+  </table>
+  <script src="script2.js" charset="utf-8"></script>
+  <script src = "script.js" charset = "utf-8"></script> -->
+</body>
+  <div id="regions_div" style="width: 900px; height: 500px;"></div>
+
+</html>
